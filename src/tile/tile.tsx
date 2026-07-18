@@ -1,11 +1,12 @@
 import styled from "styled-components";
-import { CropState, SoilState, type TileProps } from "./tile-types";
+import { CropState, CropType, SoilState, type TileProps } from "./tile-types";
+import { getRandomNumber } from "../utils/common";
 
 export const TILE_SIZE = 72;
 
 const TileContainer = styled.div<{
   $background: string;
-  $hoverBackground: string;
+  $hoverBackground?: string;
 }>`
   position: relative;
   display: flex;
@@ -20,7 +21,8 @@ const TileContainer = styled.div<{
   cursor: pointer;
 
   &:hover {
-    background-image: url(${({ $hoverBackground }) => $hoverBackground});
+    background-image: url(${({ $hoverBackground, $background }) =>
+      $hoverBackground ? $hoverBackground : $background});
   }
 `;
 
@@ -71,15 +73,11 @@ const isSeed = (cropState: CropState) => {
 };
 
 const isHarvested = (cropState: CropState) => {
-  return cropState === CropState.HARVESTED;
+  return cropState === CropState.READY;
 };
 
 const Tile = (props: TileProps) => {
-  const { cropType, cropState, soilState, onClick } = props;
-
-  const getRandomNumber = (numberSet: number[]) => {
-    return numberSet[Math.floor(Math.random() * numberSet.length)];
-  };
+  const { cropType, cropState, soilState, onMouseDown, onMouseEnter } = props;
 
   const imagePath = getImagePath(
     `../assets/crops/${isSeed(cropState) ? `${cropState}_0${getRandomNumber([1, 2])}` : `${cropType}_${cropState}`}.png`,
@@ -95,17 +93,27 @@ const Tile = (props: TileProps) => {
   return (
     <TileContainer
       $background={soilImagePath}
-      $hoverBackground={hoverSoilImagePath}
-      onClick={onClick}
+      $hoverBackground={
+        soilState !== SoilState.LOCKED ? hoverSoilImagePath : undefined
+      }
+      onMouseDown={onMouseDown}
+      onMouseEnter={onMouseEnter}
     >
-      {(soilState !== SoilState.LOCKED || !isSeed(cropState)) && (
-        <CropImage
-          $isSeed={isSeed(cropState)}
-          $isHarvestedCrop={isHarvested(cropState)}
-          src={imagePath}
-        />
-      )}
-      {isHarvested(cropState) && <DirtImage src={dirtImagePath} />}
+      {soilState !== SoilState.LOCKED &&
+        cropType !== CropType.NONE &&
+        cropState !== CropState.NONE && (
+          <>
+            <CropImage
+              $isSeed={isSeed(cropState)}
+              $isHarvestedCrop={isHarvested(cropState)}
+              src={imagePath}
+              draggable="false"
+            />
+            {isHarvested(cropState) && (
+              <DirtImage src={dirtImagePath} draggable="false" />
+            )}
+          </>
+        )}
     </TileContainer>
   );
 };
