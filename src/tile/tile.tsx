@@ -1,6 +1,8 @@
 import styled from "styled-components";
 import { CropState, CropType, SoilState, type TileProps } from "./tile-types";
 import { getRandomNumber } from "../utils/common";
+import { useEffect } from "react";
+import useGridStore from "../store/grid-store";
 
 export const TILE_SIZE = 72;
 
@@ -64,6 +66,19 @@ const DirtImage = styled.img`
   image-rendering: pixelated;
 `;
 
+const WATER_TIMER = 10000;
+
+// Growth timers scaled relative to real-world days-to-maturity
+// (baseline: radish ≈ 25 days → 10000ms)
+const CROP_GROWTH_TIMERS: Partial<Record<CropType, number>> = {
+  [CropType.RADISH]: 10000, // ~25 days irl — fastest growing
+  [CropType.SPINACH]: 16000, // ~40 days irl
+  [CropType.TURNIP]: 18000, // ~45 days irl
+  [CropType.CARROT]: 28000, // ~70 days irl
+  [CropType.POTATO]: 40000, // ~100 days irl
+  [CropType.ONION]: 44000, // ~110 days irl — slowest growing
+};
+
 const getImagePath = (path: string) => {
   return new URL(path, import.meta.url).href;
 };
@@ -76,19 +91,53 @@ const isHarvested = (cropState: CropState) => {
   return cropState === CropState.READY;
 };
 
+const isGrowingCrop = (cropType: CropType, cropState: CropState) =>
+  cropType !== CropType.NONE &&
+  cropState !== CropState.NONE &&
+  cropState !== CropState.READY &&
+  cropType in CROP_GROWTH_TIMERS;
+
+const moveToNextCropState = (cropState: CropState) => {
+  switch (cropState) {
+    case CropState.SEED:
+      return CropState.START;
+    case CropState.START:
+      return CropState.MIDDLE;
+    case CropState.MIDDLE:
+      return CropState.END;
+    case CropState.END:
+    default:
+      return CropState.READY;
+  }
+};
+
 const Tile = (props: TileProps) => {
-  const { cropType, cropState, soilState, onMouseDown, onMouseEnter } = props;
+  const { index, cropType, cropState, soilState, onMouseDown, onMouseEnter } =
+    props;
+  const gridStore = useGridStore((state) => state);
 
   const imagePath = getImagePath(
     `../assets/crops/${isSeed(cropState) ? `${cropState}_0${getRandomNumber([1, 2])}` : `${cropType}_${cropState}`}.png`,
   );
-
   const soilImagePath = getImagePath(`../assets/soil/soil_${soilState}.png`);
   const hoverSoilImagePath = getImagePath(`../assets/soil/soil_active.png`);
-
   const dirtImagePath = getImagePath(
     `../assets/soil/dirt_0${getRandomNumber([1, 2, 3, 4])}.png`,
   );
+
+  useEffect(() => {
+    if (!isGrowingCrop(cropType, cropState)) return;
+    if (soilState !== SoilState.WET) return;
+
+    const timeout = setTimeout(() => {
+      gridStore.updateTile(index, {
+        ...props,
+        cropState: moveToNextCropState(cropState),
+      });
+    }, CROP_GROWTH_TIMERS[cropType]);
+
+    return () => clearTimeout(timeout);
+  }, [cropType, cropState, soilState]);
 
   return (
     <TileContainer

@@ -1,5 +1,4 @@
 export enum SoilState {
-  DRY = "dry",
   DEFAULT = "default",
   WET = "wet",
   LOCKED = "locked",
@@ -26,6 +25,7 @@ export enum CropState {
 }
 
 export type TileProps = {
+  index: number;
   cropType: CropType;
   cropState: CropState;
   soilState: SoilState;

@@ -3,7 +3,6 @@ import useGridStore from "../store/grid-store";
 import Tile, { TILE_SIZE } from "../tile/tile";
 import styled from "styled-components";
 import { CropType, CropState, SoilState } from "../tile/tile-types";
-import { getRandomFromEnum } from "../utils/common";
 import { ToolType, useToolStore } from "../store/tool-store";
 
 const TileGrid = styled.div<{ size: number }>`
@@ -20,10 +19,11 @@ const Grid = () => {
     const size = 6;
     gridStore.setSize(size);
     gridStore.setTiles(
-      Array.from({ length: size * size }, () => ({
-        cropType: getRandomFromEnum(CropType),
-        cropState: getRandomFromEnum(CropState),
-        soilState: getRandomFromEnum(SoilState),
+      Array.from({ length: size * size }, (_, index) => ({
+        index: index,
+        cropType: CropType.NONE,
+        cropState: CropState.NONE,
+        soilState: SoilState.DEFAULT,
       })),
     );
   }, []);
@@ -33,11 +33,9 @@ const Grid = () => {
     gridStore.updateTile(index, {
       ...currentTile,
       soilState:
-        currentTile.soilState === SoilState.DRY
-          ? SoilState.DEFAULT
-          : currentTile.soilState === SoilState.DEFAULT
-            ? SoilState.WET
-            : currentTile.soilState,
+        currentTile.soilState === SoilState.DEFAULT
+          ? SoilState.WET
+          : currentTile.soilState,
     });
   };
 
@@ -48,16 +46,19 @@ const Grid = () => {
       ...currentTile,
       cropType: CropType.NONE,
       cropState: CropState.NONE,
+      soilState: SoilState.DEFAULT,
     });
   };
 
   const plantTile = (index: number) => {
-    const currentTile = gridStore.tiles[index];
-    gridStore.updateTile(index, {
-      ...currentTile,
-      cropType: getRandomFromEnum(CropType, CropType.NONE),
-      cropState: CropState.SEED,
-    });
+    if (gridStore.tiles[index].cropType === CropType.NONE) {
+      const currentTile = gridStore.tiles[index];
+      gridStore.updateTile(index, {
+        ...currentTile,
+        cropType: CropType.RADISH,
+        cropState: CropState.SEED,
+      });
+    }
   };
 
   const clearTile = (index: number) => {
@@ -66,7 +67,7 @@ const Grid = () => {
       ...currentTile,
       cropType: CropType.NONE,
       cropState: CropState.NONE,
-      soilState: SoilState.DRY,
+      soilState: SoilState.DEFAULT,
     });
   };
 
@@ -77,7 +78,7 @@ const Grid = () => {
       ...currentTile,
       cropType: CropType.NONE,
       cropState: CropState.NONE,
-      soilState: SoilState.DRY,
+      soilState: SoilState.DEFAULT,
     });
   };
 
