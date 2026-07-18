@@ -23,8 +23,9 @@ const TileContainer = styled.div<{
   cursor: pointer;
 
   &:hover {
-    background-image: url(${({ $hoverBackground, $background }) =>
-      $hoverBackground ? $hoverBackground : $background});
+    background-image:
+      url(${({ $hoverBackground }) => $hoverBackground}),
+      url(${({ $background }) => $background});
   }
 `;
 

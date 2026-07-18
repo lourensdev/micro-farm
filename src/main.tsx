@@ -6,11 +6,13 @@ import { createGlobalStyle } from "styled-components";
 
 const GlobalStyle = createGlobalStyle`
   :root {
-    --primary-background-color: #c29979;
+    --green-color: #85be8c;
+    --brown-color: #c29979;
+    --dark-green-color: #333c3a;
   }
 
   body {
-    background-color: var(--primary-background-color);
+    background-color: var(--green-color);
   }
 `;
 
