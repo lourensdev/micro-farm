@@ -1,6 +1,7 @@
 import styled from "styled-components";
 import Grid from "./grid/grid";
 import { Tools } from "./tools/tools";
+import { Score } from "./score/score";
 
 const AppLayout = styled.main`
   display: flex;
@@ -15,6 +16,7 @@ function App() {
     <AppLayout>
       <Grid />
       <Tools />
+      <Score />
     </AppLayout>
   );
 }

@@ -4,6 +4,7 @@ import Tile, { TILE_SIZE } from "../tile/tile";
 import styled from "styled-components";
 import { CropType, CropState, SoilState } from "../tile/tile-types";
 import { ToolType, useToolStore } from "../store/tool-store";
+import { useScoreStore } from "../store/score-store";
 
 const TileGrid = styled.div<{ size: number }>`
   display: grid;
@@ -14,16 +15,21 @@ const TileGrid = styled.div<{ size: number }>`
 const Grid = () => {
   const gridStore = useGridStore((state) => state);
   const toolStore = useToolStore((state) => state);
+  const scoreStore = useScoreStore((state) => state);
 
   useEffect(() => {
     const size = 6;
+    const totalTileCount = size * size;
     gridStore.setSize(size);
     gridStore.setTiles(
-      Array.from({ length: size * size }, (_, index) => ({
+      Array.from({ length: totalTileCount }, (_, index) => ({
         index: index,
         cropType: CropType.NONE,
         cropState: CropState.NONE,
-        soilState: SoilState.DEFAULT,
+        soilState:
+          index < gridStore.unlockedTiles
+            ? SoilState.DEFAULT
+            : SoilState.LOCKED,
       })),
     );
   }, []);
@@ -48,16 +54,21 @@ const Grid = () => {
       cropState: CropState.NONE,
       soilState: SoilState.DEFAULT,
     });
+    scoreStore.addCoins(10);
   };
 
   const plantTile = (index: number) => {
-    if (gridStore.tiles[index].cropType === CropType.NONE) {
+    if (
+      gridStore.tiles[index].cropType === CropType.NONE &&
+      scoreStore.coins >= 5
+    ) {
       const currentTile = gridStore.tiles[index];
       gridStore.updateTile(index, {
         ...currentTile,
         cropType: CropType.RADISH,
         cropState: CropState.SEED,
       });
+      scoreStore.removeCoins(5);
     }
   };
 
@@ -72,6 +83,7 @@ const Grid = () => {
   };
 
   const buyTile = (index: number) => {
+    if (scoreStore.coins < 10) return;
     if (gridStore.tiles[index].soilState !== SoilState.LOCKED) return;
     const currentTile = gridStore.tiles[index];
     gridStore.updateTile(index, {
@@ -80,10 +92,12 @@ const Grid = () => {
       cropState: CropState.NONE,
       soilState: SoilState.DEFAULT,
     });
+    gridStore.addUnlockedTiles(1);
+    scoreStore.removeCoins(10);
   };
 
   const handleTileClick = (index: number) => {
-    // If the tile is locked and not buying, don't do anything
+    // If the tile is not unlocked and not buying, don't do anything
     if (
       gridStore.tiles[index].soilState === SoilState.LOCKED &&
       toolStore.tool !== ToolType.BUY

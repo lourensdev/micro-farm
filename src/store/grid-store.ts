@@ -7,6 +7,9 @@ interface GridStore {
   tiles: TileProps[];
   setTiles: (tiles: TileProps[]) => void;
   updateTile: (index: number, tile: TileProps) => void;
+  unlockedTiles: number;
+  addUnlockedTiles: (unlockedTiles: number) => void;
+  removeUnlockedTiles: (unlockedTiles: number) => void;
 }
 
 const useGridStore = create<GridStore>((set) => ({
@@ -18,6 +21,11 @@ const useGridStore = create<GridStore>((set) => ({
     set((state) => ({
       tiles: state.tiles.map((t, i) => (i === index ? tile : t)),
     })),
+  unlockedTiles: 2,
+  addUnlockedTiles: (unlockedTiles: number) =>
+    set((state) => ({ unlockedTiles: state.unlockedTiles + unlockedTiles })),
+  removeUnlockedTiles: (unlockedTiles: number) =>
+    set((state) => ({ unlockedTiles: state.unlockedTiles - unlockedTiles })),
 }));
 
 export default useGridStore;
